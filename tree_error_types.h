@@ -33,6 +33,14 @@ enum tree_error_type
     TREE_ERROR_NO_VARIABLES            = 16,
     TREE_ERROR_YCHI_MATAN              = 17,
     TREE_ERROR_VARIABLE_ALREADY_EXISTS = 18,
+    TREE_ERROR_DIFFERENTIATION         = 19,
+    TREE_ERROR_MEMORY                  = 20,
+    TREE_ERROR_MATH_DOMAIN             = 21,
+    TREE_ERROR_UNKNOWN_NODE_TYPE       = 22,
+    TREE_ERROR_FUNCTION_REDEFINITION   = 23,
+    TREE_ERROR_INVALID_ARGUMENT        = 24
 };
+
+
 
 #endif // TREE_ERROR_TYPES_H_

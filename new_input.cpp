@@ -11,6 +11,69 @@
 #include "tree_common.h"
 
 
+static standard_token_info standard_tokens[] = {
+    {TOKEN_PLUS,          "+" },
+    {TOKEN_MINUS,         "-" },
+    {TOKEN_MULTIPLY,      "*" },
+    {TOKEN_DIVIDE,        "/" },
+    {TOKEN_ASSIGN,        "=" },
+    {TOKEN_SEMICOLON,     ";" },
+    {TOKEN_LPAREN,        "(" },
+    {TOKEN_RPAREN,        ")" },
+    {TOKEN_LBRACE,        "{" },
+    {TOKEN_RBRACE,        "}" },
+    {TOKEN_EQUAL,         "=="},
+    {TOKEN_NOT_EQUAL,     "!="},
+    {TOKEN_LESS,          "<" },
+    {TOKEN_LESS_EQUAL,    "<="},
+    {TOKEN_GREATER,       ">" },
+    {TOKEN_GREATER_EQUAL, ">="},
+    {TOKEN_AND,           "&&"},
+    {TOKEN_OR,            "||"},
+    {TOKEN_NOT,           "!" },
+    {TOKEN_COMMA,         "," },
+    {TOKEN_FUNC,          "vsem_salam"},
+    {TOKEN_RETURN,        "verni_bistro"},
+    {TOKEN_IF,            "esli"},
+    {TOKEN_WHILE,         "skoro_budu"}
+};
+
+
+token_type find_token_by_string(const char* string)
+{
+    for (int i = 0; i < sizeof(standard_tokens) / sizeof(standard_tokens[0]); i++)
+    {
+        if (strcmp(standard_tokens[i].token_string, string) == 0)
+            return standard_tokens[i].token_type;
+    }
+    return TOKEN_ERROR;
+}
+
+
+static struct_for_compare_token_and_node standard_compare_token_and_node[] = {
+    {TOKEN_EQUAL,         NODE_EQUAL},
+    {TOKEN_NOT_EQUAL,     NODE_NOT_EQUAL},
+    {TOKEN_LESS,          NODE_LESS},
+    {TOKEN_LESS_EQUAL,    NODE_LESS_EQUAL},
+    {TOKEN_GREATER,       NODE_GREATER},
+    {TOKEN_GREATER_EQUAL, NODE_GREATER_EQUAL},
+    {TOKEN_AND,           NODE_AND},
+    {TOKEN_OR,            NODE_OR}
+};
+
+
+node_type translate_from_token_type_to_node_type(token_type token_type)
+{
+    for (size_t i = 0; i < sizeof(standard_compare_token_and_node) / sizeof(standard_compare_token_and_node[0]); i++)
+    {
+        if (standard_compare_token_and_node[i].token_type == token_type)
+            return standard_compare_token_and_node[i].node_type;
+    }
+
+    return NODE_EMPTY;
+}
+
+
 void free_tokens(token_t* tokens, size_t token_count)
 {
     assert(tokens != NULL);
@@ -27,9 +90,18 @@ void free_tokens(token_t* tokens, size_t token_count)
 }
 
 
-static int check_symbol(const char** string, token_t* tokens, size_t* current_index, char target_symbol, token_type type)
+static bool check_token(token_t* tokens, int index, int token_count, token_type type)
 {
-    // TODO: assert
+    return (index < token_count && tokens[index] -> type == type);
+}
+
+
+int check_symbol(const char** string, token_t* tokens, size_t* current_index, char target_symbol, token_type type)
+{
+    assert(string        != NULL);
+    assert(tokens        != NULL);
+    assert(current_index != NULL);
+
     if (**string == target_symbol)
     {
         tokens[(*current_index)++].type = type;
@@ -43,14 +115,18 @@ static int check_symbol(const char** string, token_t* tokens, size_t* current_in
 
 token_t* lexer(const char* string, int* token_count)
 {
-    assert(string != NULL);
-
-    // TODO: assert
+    assert(string      != NULL);
+    assert(token_count != NULL);
 
     size_t current_index = 0;
     size_t capacity = INITIAL_CAPACITY;
 
     token_t* tokens = (token_t*)calloc(capacity, sizeof(token_t));
+    if (tokens == NULL)
+    {
+        *token_count = 0;
+        return NULL;
+    }
 
     while (*string != '\0')
     {
@@ -60,7 +136,12 @@ token_t* lexer(const char* string, int* token_count)
             token_t* new_tokens = (token_t*)realloc(tokens, capacity * sizeof(token_t));
             if (new_tokens == NULL)
             {
-                free_tokens(tokens, current_index);
+                for (int i = 0; i < current_index; i++)
+                {
+                    if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].value.identifier)
+                        free(tokens[i].value.identifier);
+                }
+                free(tokens);
                 *token_count = 0;
                 return NULL;
             }
@@ -73,15 +154,42 @@ token_t* lexer(const char* string, int* token_count)
             continue;
         }
 
-        // TODO: define
-        if (check_symbol(&string, tokens, &current_index, '(', TOKEN_LPAREN))    continue;
-        if (check_symbol(&string, tokens, &current_index, ')', TOKEN_RPAREN))    continue;
-        if (check_symbol(&string, tokens, &current_index, '+', TOKEN_PLUS))      continue;
-        if (check_symbol(&string, tokens, &current_index, '-', TOKEN_MINUS))     continue;
-        if (check_symbol(&string, tokens, &current_index, '*', TOKEN_MULTIPLY))  continue;
-        if (check_symbol(&string, tokens, &current_index, '/', TOKEN_DIVIDE))    continue;
-        if (check_symbol(&string, tokens, &current_index, '=', TOKEN_ASSIGN))    continue;
-        if (check_symbol(&string, tokens, &current_index, ';', TOKEN_SEMICOLON)) continue;
+        bool token_found = false;
+
+        for (size_t i = 0; i < sizeof(standard_tokens) / sizeof(standard_tokens[0]); i++) //сначала бежим по двусимвольным
+        {
+            size_t token_len = strlen(standard_tokens[i].token_string);
+
+            if (token_len == 1)
+                continue;
+
+            if (strncmp(string, standard_tokens[i].token_string, token_len) == 0)
+            {
+                tokens[current_index++].type = standard_tokens[i].token_type;
+                string += token_len;
+                token_found = true;
+                break;
+            }
+        }
+
+        if (token_found != NULL)
+            continue;
+
+//         for (size_t i = 0; i < sizeof(standard_tokens) / sizeof(standard_tokens[0]); i++) //потом по односимвольным
+//         {
+//             size_t token_len = strlen(standard_tokens[i].token_string);
+//
+//             if (token_len == 1 && *string == standard_tokens[i].token_string[0])
+//             {
+//                 tokens[current_index++].type = standard_tokens[i].token_type;
+//                 string++;
+//                 token_found = true;
+//                 break;
+//             }
+//         }
+//
+//         if (token_found != NULL)
+//             continue;
 
         if (isdigit(*string))
         {
@@ -117,14 +225,28 @@ token_t* lexer(const char* string, int* token_count)
             }
             buffer[index] = '\0';
 
-            tokens[current_index].type = TOKEN_IDENTIFIER;
-            tokens[current_index].value.identifier = strdup(buffer);
-            current_index++;
+            token_found = false;
+            for (size_t j = 0; j < sizeof(standard_tokens) / sizeof(standard_tokens[0]); j++)
+            {
+                if (strcmp(buffer, standard_tokens[j].token_string) == 0)
+                {
+                    tokens[current_index++].type = standard_tokens[j].token_type;
+                    token_found = true;
+                    break;
+                }
+            }
+
+            if (!token_found)
+            {
+                tokens[current_index].type = TOKEN_IDENTIFIER;
+                tokens[current_index].value.identifier = strdup(buffer);
+                current_index++;
+            }
             continue;
         }
 
-        tokens[current_index++].type = TOKEN_ERROR;
-        break;
+        fprintf(stderr, "Lexer warning: Unknown character '%c', skipping", *s);
+        string++;
     }
 
     tokens[current_index].type = TOKEN_EOF;

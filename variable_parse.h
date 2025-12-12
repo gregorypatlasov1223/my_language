@@ -6,21 +6,6 @@
 #include "tree_common.h"
 #include "tree_error_types.h"
 
-struct variable_t
-{
-    char   name[MAX_VARIABLE_LENGTH];
-    size_t hash;
-    double value;
-    bool   is_defined;
-};
-
-struct variable_table
-{
-    variable_t* variables;
-    int         number_of_variables;
-    bool        is_sorted;
-};
-
 void init_variable_table(variable_table* ptr_table);
 int find_variable_by_name(variable_table* ptr_table, const char* name_of_variable);
 int find_variable_by_hash(variable_table* ptr_table, size_t hash, const char* name_of_variable);

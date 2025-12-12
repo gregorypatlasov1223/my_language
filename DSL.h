@@ -34,4 +34,11 @@
             if (nodes[i]) free_subtree(nodes[i]); \
     } while(0)
 
+
+#define CHECK_SYMBOL(type, target_symbol) \
+    do { \
+        if (check_symbol(&string, tokens, &current_index, (target_symbol), (type))) \
+            continue; \
+    } while(0)
+
 #endif // DSL_H

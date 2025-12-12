@@ -4,22 +4,44 @@
 #include "tree_base.h"
 #include "variable_parse.h"
 
-// Типы токенов
+
 enum  token_type
 {
-    TOKEN_IDENTIFIER   = 0,
-    TOKEN_NUMBER       = 1,
-    TOKEN_PLUS         = 2,
-    TOKEN_MINUS        = 3,
-    TOKEN_MULTIPLY     = 4,
-    TOKEN_DIVIDE       = 5,
-    TOKEN_ASSIGN       = 6,  // =
-    TOKEN_SEMICOLON    = 7,  // ;
-    TOKEN_LPAREN       = 8,  // (
-    TOKEN_RPAREN       = 9,  // )
-    TOKEN_EOF          = 10, // Конец строки
-    TOKEN_ERROR        = 11  // Ошибка
+    TOKEN_IDENTIFIER = 0,
+    TOKEN_NUMBER,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_MULTIPLY,
+    TOKEN_DIVIDE,
+    TOKEN_ASSIGN,        // =
+    TOKEN_SEMICOLON,     // ;
+    TOKEN_LPAREN,        // (
+    TOKEN_RPAREN,        // )
+    TOKEN_LBRACE,        // {
+    TOKEN_RBRACE,        // }
+    TOKEN_EQUAL,         // ==
+    TOKEN_NOT_EQUAL,     // !=
+    TOKEN_LESS,          // <
+    TOKEN_LESS_EQUAL,    // <=
+    TOKEN_GREATER,       // >
+    TOKEN_GREATER_EQUAL, // >=
+    TOKEN_AND,           // &&
+    TOKEN_OR,            // ||
+    TOKEN_NOT,           // !
+    TOKEN_COMMA,         // ,
+    TOKEN_FUNC,          // Freestayla
+    TOKEN_RETURN,        // Rakamakafo
+    TOKEN_IF,            // Изюм-Фактор
+    TOKEN_WHILE,         // Вова-АЙболит-Лечит-говнокод
+    TOKEN_EOF,           // Конец строки
+    TOKEN_ERROR          // Ошибка
 };
+
+struct symbol_and_token
+{
+    token_type type;
+    char target_symbol;
+}
 
 struct token_t
 {
@@ -30,13 +52,24 @@ struct token_t
     } value;
 };
 
+struct standard_token_info
+{
+    token_type type_of_token;
+    const char* token_string;
+};
+
+struct struct_for_compare_token_and_node
+{
+    token_type type_of_token;
+    node_type  node_type;
+};
+
 
 token_t* lexer(const char* string, size_t* token_count);
 void free_tokens(token_t* tokens, size_t token_count);
-// Функции синтаксического анализа
-node_t* get_assignment(const char* source, variable_table* var_table);
+int check_symbol(const char** string, token_t* tokens, size_t* current_index, char target_symbol, token_type type);
 
-// Основная функция
+
 node_t* parse_program(const char* source, variable_table* var_table);
 node_t* read_program_from_file(const char* filename, variable_table* var_table);
 
